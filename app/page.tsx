@@ -3,8 +3,9 @@
 
 import { useState } from 'react';
 import { useStore, Team, KnockoutMatch, PLAYOFFS, GROUPS } from '../store/useStore'; 
-import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles } from 'lucide-react';
+import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe } from 'lucide-react';
 import { toPng } from 'html-to-image'; // <--- BIBLIOTECA NOVA AQUI!
+
 
 const getFlagUrl = (code: string) => `https://flagcdn.com/w80/${code}.png`;
 
@@ -255,6 +256,53 @@ export default function Simulator() {
           </div>
         </div>
       )}
+     {/* ... (todo o código do Mata-Mata que já tá aí) ... */}
+
+      {/* --- FOOTER DO CRIADOR --- */}
+      {/* --- FOOTER DO CRIADOR --- */}
+      <footer className="w-full max-w-7xl mx-auto mt-16 pt-6 pb-8 border-t border-zinc-800/80 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-500">
+        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-2">
+            <Code size={18} className="text-red-500" />
+            <p className="text-sm">
+              Desenvolvido por <strong className="text-zinc-300">Lucas Lira</strong> © 2026
+            </p>
+          </div>
+          
+          {/* BOTÃO EM DESTAQUE PRO PORTFÓLIO */}
+          <a 
+            href="https://lucaslira11.github.io/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-red-500 hover:text-red-400 rounded-full text-xs font-bold transition-all shadow-sm hover:shadow-[0_0_10px_rgba(234,179,8,0.2)]"
+          >
+            <Globe size={14} />
+            Ver meu Portfólio
+          </a>
+        </div>
+        
+        {/* REDES SOCIAIS */}
+        <div className="flex gap-5">
+          <a 
+            href="https://github.com/LucasLira11" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-white hover:scale-110 transition-all"
+            title="Meu GitHub"
+          >
+            <Github size={22} />
+          </a>
+          <a 
+            href="https://www.linkedin.com/in/lucas-lira-79b339272/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-blue-400 hover:scale-110 transition-all"
+            title="Meu LinkedIn"
+          >
+            <Linkedin size={22} />
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }
