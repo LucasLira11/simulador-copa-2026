@@ -3,26 +3,23 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useStore, Team, KnockoutMatch, PLAYOFFS, GROUPS } from '../store/useStore'; 
-import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe, Smartphone } from 'lucide-react';
+import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe, Smartphone, Undo2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 
 const getFlagUrl = (code: string) => `https://flagcdn.com/w80/${code}.png`;
 
 export default function Simulator() {
-  const { phase, setPhase, repechageWinners, setRepechageWinner, groupWinners, setGroupWinner, bracket, generateBracket, advanceTeam, simulateIA, bestThirds } = useStore();
+  const { phase, setPhase, repechageWinners, setRepechageWinner, groupWinners, setGroupWinner, bracket, generateBracket, advanceTeam, simulateIA, bestThirds, history, undoLastAction } = useStore();
   
   const [showWarning, setShowWarning] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
 
-  // REFERÊNCIA PARA O SCROLL DO CHAVEAMENTO
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // EFEITO PARA CENTRALIZAR O SCROLL NO MATA-MATA (MOBILE)
   useEffect(() => {
     if ((phase === 'MATA_MATA' || phase === 'CAMPEAO') && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
-      // Calcula o meio exato e rola para lá
       const scrollPosition = (container.scrollWidth - container.clientWidth) / 2;
       container.scrollLeft = scrollPosition;
     }
@@ -54,7 +51,6 @@ export default function Simulator() {
   const handleWhatsAppShare = () => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + window.location.href)}`, '_blank');
   const handleTwitterShare = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
 
-  // FUNÇÃO DE FOTO ATUALIZADA
   const handleDownloadImage = async () => {
     setIsCapturing(true);
     setTimeout(async () => {
@@ -186,25 +182,38 @@ export default function Simulator() {
       {(phase === 'MATA_MATA' || phase === 'CAMPEAO') && (
         <div className="w-full h-full pb-10 flex flex-col items-center pt-2">
           
-          <div className="flex flex-wrap justify-center items-center gap-3 mb-8 w-full max-w-5xl px-4">
-            {phase !== 'CAMPEAO' && (
-              <button onClick={() => simulateIA('MATA_MATA')} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.5)] transition-colors mr-auto">
-                <Sparkles size={18} /> Preencher Mata-Mata (IA)
-              </button>
-            )}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 mb-8 w-full max-w-5xl px-4">
             
-            <button onClick={handleDownloadImage} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors ml-auto">
-              <Camera size={18} /> {isCapturing ? 'Gerando Imagem...' : 'Salvar Imagem'}
-            </button>
-            <button onClick={handleWhatsAppShare} className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-              <MessageCircle size={18} /> WhatsApp
-            </button>
-            <button onClick={handleTwitterShare} className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 border border-zinc-700 transition-colors">
-              <Twitter size={18} /> X
-            </button>
+            {/* Lado Esquerdo: IA e Desfazer */}
+            <div className="flex flex-wrap gap-2 justify-center w-full md:w-auto">
+              {phase !== 'CAMPEAO' && (
+                <button onClick={() => simulateIA('MATA_MATA')} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.5)] transition-colors">
+                  <Sparkles size={18} /> <span className="hidden md:inline">Preencher Mata-Mata (IA)</span><span className="md:hidden">Preencher IA</span>
+                </button>
+              )}
+              
+              {(history && history.length > 0) && (
+                <button onClick={undoLastAction} className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-colors">
+                  <Undo2 size={18} /> <span className="hidden md:inline">Desfazer última modificação</span><span className="md:hidden">Desfazer</span>
+                </button>
+              )}
+            </div>
+            
+            {/* Lado Direito: Compartilhar e Salvar */}
+            <div className="flex flex-wrap gap-2 justify-center w-full md:w-auto">
+              <button onClick={handleDownloadImage} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                <Camera size={18} /> {isCapturing ? 'Gerando Imagem...' : <><span className="hidden md:inline">Salvar Imagem</span><span className="md:hidden">Salvar</span></>}
+              </button>
+              <button onClick={handleWhatsAppShare} className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                <MessageCircle size={18} /> <span className="hidden md:inline">WhatsApp</span>
+              </button>
+              <button onClick={handleTwitterShare} className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 border border-zinc-700 transition-colors">
+                <Twitter size={18} /> X
+              </button>
+            </div>
+
           </div>
 
-          {/* Aviso para virar o celular (Só aparece em telas pequenas e no modo retrato) */}
           {!isCapturing && (
             <div className="md:hidden portrait:flex bg-yellow-500 text-black font-black p-3 rounded-xl mb-6 items-center justify-center gap-3 animate-pulse w-11/12 max-w-sm mx-auto shadow-[0_0_15px_rgba(234,179,8,0.4)]">
               <Smartphone className="rotate-90 transition-transform" size={24} />
@@ -212,7 +221,6 @@ export default function Simulator() {
             </div>
           )}
 
-          {/* Pop-up de Campeão Responsivo (menor no mobile) */}
           {phase === 'CAMPEAO' && bracket.final[0].winner && !isCapturing && (
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-50 bg-zinc-900/95 p-6 md:p-8 rounded-3xl border-4 border-yellow-500 shadow-[0_0_100px_rgba(234,179,8,0.5)] animate-bounce-short w-[90%] max-w-md">
                <Crown className="w-12 h-12 md:w-14 md:h-14 text-yellow-500 mb-2"/>
@@ -223,12 +231,10 @@ export default function Simulator() {
             </div>
           )}
 
-          {/* Container Externo com o Scroll (Sem o ID de captura) */}
           <div 
             ref={scrollContainerRef}
             className="w-full overflow-x-auto custom-scrollbar py-4 md:py-8 bg-zinc-950"
           >
-            {/* O ID de captura fica aqui! Ele pega a largura real de ponta a ponta sem cortar */}
             <div 
               id="bracket-capture" 
               className="w-fit mx-auto flex items-center px-4 md:px-8 gap-2 bg-zinc-950 py-4 md:py-8"
@@ -288,7 +294,6 @@ export default function Simulator() {
         </div>
       )}
 
-      {/* --- FOOTER DO CRIADOR --- */}
       <footer className="w-full max-w-7xl mx-auto mt-16 pt-6 pb-8 border-t border-zinc-800/80 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-500">
         <div className="flex flex-col md:flex-row items-center gap-3 md:gap-6">
           <div className="flex items-center gap-2">

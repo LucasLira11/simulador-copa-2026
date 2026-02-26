@@ -37,6 +37,11 @@ const TEAM_RANKING: Record<string, number> = {
   'pl': 74, 'iq': 60, 'bo': 58, 'cd': 59, 'jm': 61
 };
 
+interface HistoryState {
+  bracket: any;
+  phase: 'REPESCAGEM' | 'GRUPOS' | 'MATA_MATA' | 'CAMPEAO';
+}
+
 interface StoreState {
   phase: 'REPESCAGEM' | 'GRUPOS' | 'MATA_MATA' | 'CAMPEAO';
   setPhase: (phase: 'REPESCAGEM' | 'GRUPOS' | 'MATA_MATA' | 'CAMPEAO') => void;
@@ -50,6 +55,10 @@ interface StoreState {
   generateBracket: () => void;
   advanceTeam: (phase: 'dezesseisAvos' | 'oitavas' | 'quartas' | 'semis' | 'final', matchIndex: number, team: Team) => void;
   simulateIA: (targetPhase: 'REPESCAGEM' | 'GRUPOS' | 'MATA_MATA') => void;
+  
+  // NOVO: Controle de Histórico para o Desfazer
+  history: HistoryState[];
+  undoLastAction: () => void;
 }
 
 const initialGroups: Record<string, { first: Team | null, second: Team | null, third: Team | null }> = {};
@@ -60,6 +69,14 @@ export const useStore = create<StoreState>((set) => ({
   phase: 'REPESCAGEM',
   setPhase: (phase) => set({ phase }),
   
+  history: [],
+  undoLastAction: () => set((state) => {
+    if (!state.history || state.history.length === 0) return state;
+    const lastState = state.history[state.history.length - 1];
+    const newHistory = state.history.slice(0, -1);
+    return { bracket: lastState.bracket, phase: lastState.phase, history: newHistory };
+  }),
+
   repechageWinners: { 'UEFA_D': null, 'UEFA_A': null, 'UEFA_C': null, 'UEFA_B': null, 'IC_2': null, 'IC_1': null },
   setRepechageWinner: (playoffId, team) => set((state) => ({ repechageWinners: { ...state.repechageWinners, [playoffId]: team } })),
 
@@ -102,34 +119,37 @@ export const useStore = create<StoreState>((set) => ({
     for (let i = 0; i < 16; i++) {
       dezesseisAvos.push({ team1: teams32[i] || null, team2: teams32[31 - i] || null, winner: null });
     }
-    return { phase: 'MATA_MATA', bracket: { dezesseisAvos, oitavas: createEmptyMatches(8), quartas: createEmptyMatches(4), semis: createEmptyMatches(2), final: createEmptyMatches(1) } };
+    return { phase: 'MATA_MATA', bracket: { dezesseisAvos, oitavas: createEmptyMatches(8), quartas: createEmptyMatches(4), semis: createEmptyMatches(2), final: createEmptyMatches(1) }, history: [] };
   }),
 
   advanceTeam: (phase, matchIndex, team) => set((state) => {
-    const newBracket = { ...state.bracket };
+    // Salva o histórico ANTES de aplicar a mudança
+    const currentHistory = [...(state.history || []), { bracket: state.bracket, phase: state.phase }];
+    
+    // Faz uma cópia profunda pra não poluir o histórico
+    const newBracket = JSON.parse(JSON.stringify(state.bracket));
     newBracket[phase][matchIndex] = { ...newBracket[phase][matchIndex], winner: team };
+    
     const nextMatch = Math.floor(matchIndex / 2);
     const isTeam1 = matchIndex % 2 === 0;
 
     if (phase === 'dezesseisAvos') {
-      newBracket.oitavas[nextMatch] = { ...newBracket.oitavas[nextMatch] };
       if (isTeam1) newBracket.oitavas[nextMatch].team1 = team; else newBracket.oitavas[nextMatch].team2 = team;
     }
     else if (phase === 'oitavas') {
-      newBracket.quartas[nextMatch] = { ...newBracket.quartas[nextMatch] };
       if (isTeam1) newBracket.quartas[nextMatch].team1 = team; else newBracket.quartas[nextMatch].team2 = team;
     } 
     else if (phase === 'quartas') {
-      newBracket.semis[nextMatch] = { ...newBracket.semis[nextMatch] };
       if (isTeam1) newBracket.semis[nextMatch].team1 = team; else newBracket.semis[nextMatch].team2 = team;
     }
     else if (phase === 'semis') {
-      newBracket.final[0] = { ...newBracket.final[0] };
       if (isTeam1) newBracket.final[0].team1 = team; else newBracket.final[0].team2 = team;
     }
-    else if (phase === 'final') { return { bracket: newBracket, phase: 'CAMPEAO' }; }
+    else if (phase === 'final') { 
+      return { bracket: newBracket, history: currentHistory, phase: 'CAMPEAO' }; 
+    }
     
-    return { bracket: newBracket };
+    return { bracket: newBracket, history: currentHistory };
   }),
 
   simulateIA: (targetPhase) => set((state) => {
@@ -167,53 +187,42 @@ export const useStore = create<StoreState>((set) => ({
     }
 
     if (targetPhase === 'MATA_MATA') {
+      // Salva o histórico caso o usuário queira desfazer a IA inteira
+      const currentHistory = [...(state.history || []), { bracket: state.bracket, phase: state.phase }];
       const newBracket = JSON.parse(JSON.stringify(state.bracket));
       
-      // Função blindada pra decidir quem ganha (com fallback se o time for nulo)
       const defineWinner = (match: KnockoutMatch) => {
+        if (match.winner) return match.winner; // IA Respeita se já houver um vencedor manual!
         if (!match.team1 && !match.team2) return null;
         if (!match.team1) return match.team2;
         if (!match.team2) return match.team1;
-        const rank1 = TEAM_RANKING[match.team1.code] || 50;
-        const rank2 = TEAM_RANKING[match.team2.code] || 50;
+        
+        // Mistura o Ranking com uma pitada de aleatoriedade (zebras acontecem!)
+        const rank1 = (TEAM_RANKING[match.team1.code] || 50) + (Math.random() * 20);
+        const rank2 = (TEAM_RANKING[match.team2.code] || 50) + (Math.random() * 20);
         return rank1 >= rank2 ? match.team1 : match.team2;
       };
 
-      // 1. Resolve os 16-avos
-      newBracket.dezesseisAvos.forEach((m: KnockoutMatch, i: number) => {
-        m.winner = defineWinner(m);
-        const nextMatch = Math.floor(i / 2);
-        if (i % 2 === 0) newBracket.oitavas[nextMatch].team1 = m.winner;
-        else newBracket.oitavas[nextMatch].team2 = m.winner;
-      });
+      const resolvePhase = (currentMatches: KnockoutMatch[], nextMatches: KnockoutMatch[] | null) => {
+        currentMatches.forEach((m, i) => {
+          if (!m.winner) {
+            m.winner = defineWinner(m);
+            if (nextMatches) {
+              const nextMatch = Math.floor(i / 2);
+              if (i % 2 === 0) nextMatches[nextMatch].team1 = m.winner;
+              else nextMatches[nextMatch].team2 = m.winner;
+            }
+          }
+        });
+      };
 
-      // 2. Resolve as Oitavas
-      newBracket.oitavas.forEach((m: KnockoutMatch, i: number) => {
-        m.winner = defineWinner(m);
-        const nextMatch = Math.floor(i / 2);
-        if (i % 2 === 0) newBracket.quartas[nextMatch].team1 = m.winner;
-        else newBracket.quartas[nextMatch].team2 = m.winner;
-      });
+      resolvePhase(newBracket.dezesseisAvos, newBracket.oitavas);
+      resolvePhase(newBracket.oitavas, newBracket.quartas);
+      resolvePhase(newBracket.quartas, newBracket.semis);
+      resolvePhase(newBracket.semis, newBracket.final);
+      resolvePhase(newBracket.final, null); // Final não tem nextMatches
 
-      // 3. Resolve as Quartas
-      newBracket.quartas.forEach((m: KnockoutMatch, i: number) => {
-        m.winner = defineWinner(m);
-        const nextMatch = Math.floor(i / 2);
-        if (i % 2 === 0) newBracket.semis[nextMatch].team1 = m.winner;
-        else newBracket.semis[nextMatch].team2 = m.winner;
-      });
-
-      // 4. Resolve as Semis
-      newBracket.semis.forEach((m: KnockoutMatch, i: number) => {
-        m.winner = defineWinner(m);
-        if (i % 2 === 0) newBracket.final[0].team1 = m.winner;
-        else newBracket.final[0].team2 = m.winner;
-      });
-
-      // 5. Resolve a Grande Final
-      newBracket.final[0].winner = defineWinner(newBracket.final[0]);
-
-      return { bracket: newBracket, phase: 'CAMPEAO' };
+      return { bracket: newBracket, history: currentHistory, phase: 'CAMPEAO' };
     }
 
     return state;
