@@ -1,10 +1,10 @@
 // app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useStore, Team, KnockoutMatch, PLAYOFFS, GROUPS } from '../store/useStore'; 
 import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe, Smartphone } from 'lucide-react';
-import { toPng } from 'html-to-image'; // <--- BIBLIOTECA NOVA AQUI!
+import { toPng } from 'html-to-image';
 
 
 const getFlagUrl = (code: string) => `https://flagcdn.com/w80/${code}.png`;
@@ -14,6 +14,19 @@ export default function Simulator() {
   
   const [showWarning, setShowWarning] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+
+  // REFERÊNCIA PARA O SCROLL DO CHAVEAMENTO
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // EFEITO PARA CENTRALIZAR O SCROLL NO MATA-MATA (MOBILE)
+  useEffect(() => {
+    if ((phase === 'MATA_MATA' || phase === 'CAMPEAO') && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      // Calcula o meio exato e rola para lá
+      const scrollPosition = (container.scrollWidth - container.clientWidth) / 2;
+      container.scrollLeft = scrollPosition;
+    }
+  }, [phase]);
 
   const allRepechageDone = Object.values(repechageWinners).every(winner => winner !== null);
   const allFirstsAndSecondsDone = Object.values(groupWinners).every(g => g.first !== null && g.second !== null);
@@ -48,7 +61,6 @@ export default function Simulator() {
       const element = document.getElementById('bracket-capture');
       if (element) {
         try {
-          // Usa a biblioteca nova que entende Tailwind de boa
           const dataUrl = await toPng(element, { 
             backgroundColor: '#09090b', 
             pixelRatio: 2 
@@ -192,7 +204,7 @@ export default function Simulator() {
             </button>
           </div>
 
-          {/* NOVO: Aviso para virar o celular (Só aparece em telas pequenas e no modo retrato) */}
+          {/* Aviso para virar o celular (Só aparece em telas pequenas e no modo retrato) */}
           {!isCapturing && (
             <div className="md:hidden portrait:flex bg-yellow-500 text-black font-black p-3 rounded-xl mb-6 items-center justify-center gap-3 animate-pulse w-11/12 max-w-sm mx-auto shadow-[0_0_15px_rgba(234,179,8,0.4)]">
               <Smartphone className="rotate-90 transition-transform" size={24} />
@@ -210,11 +222,15 @@ export default function Simulator() {
             </div>
           )}
 
-          {/* AJUSTE AQUI: Trocamos o flex center direto no container de scroll por um alinhamento dinâmico */}
-          <div id="bracket-capture" className="w-full overflow-x-auto custom-scrollbar py-8 bg-zinc-950 flex justify-start md:justify-center">
-            
-            {/* Adicionado w-max e padding para garantir que o scroll funcione certinho */}
-            <div className="w-max min-w-full flex justify-center items-center px-4 md:px-8 gap-2">
+          {/* AJUSTE AQUI: reficionado, e flex removido para permitir o scroll natural */}
+          <div 
+            id="bracket-capture" 
+            ref={scrollContainerRef}
+            className="w-full overflow-x-auto custom-scrollbar py-8 bg-zinc-950"
+          >
+            {/* w-fit e mx-auto garantem centro no PC e borda liberada no celular */}
+            <div className="w-fit mx-auto flex items-center px-4 md:px-8 gap-2">
+              
               <div className="flex gap-2">
                  {!isCapturing && (
                    <div className="flex flex-col justify-around h-[800px]">
@@ -263,13 +279,12 @@ export default function Simulator() {
                    <MatchNode match={bracket.semis[1]} onSelect={(t) => advanceTeam('semis', 1, t)} reverse />
                  </div>
               </div>
+
             </div>
           </div>
         </div>
       )}
-     {/* ... (todo o código do Mata-Mata que já tá aí) ... */}
 
-      {/* --- FOOTER DO CRIADOR --- */}
       {/* --- FOOTER DO CRIADOR --- */}
       <footer className="w-full max-w-7xl mx-auto mt-16 pt-6 pb-8 border-t border-zinc-800/80 flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-500">
         <div className="flex flex-col md:flex-row items-center gap-3 md:gap-6">
@@ -280,7 +295,6 @@ export default function Simulator() {
             </p>
           </div>
           
-          {/* BOTÃO EM DESTAQUE PRO PORTFÓLIO */}
           <a 
             href="https://lucaslira11.github.io/" 
             target="_blank" 
@@ -292,7 +306,6 @@ export default function Simulator() {
           </a>
         </div>
         
-        {/* REDES SOCIAIS */}
         <div className="flex gap-5">
           <a 
             href="https://github.com/LucasLira11" 
