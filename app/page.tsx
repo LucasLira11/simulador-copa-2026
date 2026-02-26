@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useStore, Team, KnockoutMatch, PLAYOFFS, GROUPS } from '../store/useStore'; 
-import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe } from 'lucide-react';
+import { Trophy, ArrowRight, Globe2, Crown, AlertTriangle, Camera, MessageCircle, Twitter, Link, Sparkles, Github, Linkedin, Code, Globe, Smartphone } from 'lucide-react';
 import { toPng } from 'html-to-image'; // <--- BIBLIOTECA NOVA AQUI!
 
 
@@ -192,6 +192,14 @@ export default function Simulator() {
             </button>
           </div>
 
+          {/* NOVO: Aviso para virar o celular (Só aparece em telas pequenas e no modo retrato) */}
+          {!isCapturing && (
+            <div className="md:hidden portrait:flex bg-yellow-500 text-black font-black p-3 rounded-xl mb-6 items-center justify-center gap-3 animate-pulse w-11/12 max-w-sm mx-auto shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+              <Smartphone className="rotate-90 transition-transform" size={24} />
+              <span className="text-sm text-center">Gire o celular para a horizontal para ver o chaveamento completo!</span>
+            </div>
+          )}
+
           {phase === 'CAMPEAO' && bracket.final[0].winner && !isCapturing && (
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-50 bg-zinc-900/95 p-8 rounded-3xl border-4 border-yellow-500 shadow-[0_0_100px_rgba(234,179,8,0.5)] animate-bounce-short">
                <Crown size={56} className="text-yellow-500 mb-2"/>
@@ -202,8 +210,11 @@ export default function Simulator() {
             </div>
           )}
 
-          <div id="bracket-capture" className="w-full overflow-x-auto custom-scrollbar flex justify-center py-8 bg-zinc-950">
-            <div className="min-w-[900px] flex justify-center items-center px-4 gap-2">
+          {/* AJUSTE AQUI: Trocamos o flex center direto no container de scroll por um alinhamento dinâmico */}
+          <div id="bracket-capture" className="w-full overflow-x-auto custom-scrollbar py-8 bg-zinc-950 flex justify-start md:justify-center">
+            
+            {/* Adicionado w-max e padding para garantir que o scroll funcione certinho */}
+            <div className="w-max min-w-full flex justify-center items-center px-4 md:px-8 gap-2">
               <div className="flex gap-2">
                  {!isCapturing && (
                    <div className="flex flex-col justify-around h-[800px]">
@@ -221,7 +232,7 @@ export default function Simulator() {
                  </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center h-[800px] px-2">
+              <div className="flex flex-col items-center justify-center h-[800px] px-2 md:px-6">
                  <Trophy size={40} className="text-yellow-500 mb-4 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]"/>
                  <div className="transform scale-110 border-2 border-yellow-500 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] bg-zinc-950">
                     <p className="text-center text-yellow-500 font-black text-[10px] py-1.5 uppercase tracking-widest bg-zinc-900 rounded-t-lg">Finalíssima</p>
