@@ -212,24 +212,27 @@ export default function Simulator() {
             </div>
           )}
 
+          {/* Pop-up de Campeão Responsivo (menor no mobile) */}
           {phase === 'CAMPEAO' && bracket.final[0].winner && !isCapturing && (
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-50 bg-zinc-900/95 p-8 rounded-3xl border-4 border-yellow-500 shadow-[0_0_100px_rgba(234,179,8,0.5)] animate-bounce-short">
-               <Crown size={56} className="text-yellow-500 mb-2"/>
-               <h2 className="text-4xl font-black text-white mb-4">CAMPEÃO 2026</h2>
-               <img src={getFlagUrl(bracket.final[0].winner.code)} className="w-24 rounded-lg shadow-xl mb-4" />
-               <h3 className="text-2xl font-bold text-yellow-500 uppercase text-center">{bracket.final[0].winner.name}</h3>
-               <button onClick={() => window.location.reload()} className="mt-6 text-zinc-400 underline text-sm hover:text-white">Simular Novamente</button>
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-50 bg-zinc-900/95 p-6 md:p-8 rounded-3xl border-4 border-yellow-500 shadow-[0_0_100px_rgba(234,179,8,0.5)] animate-bounce-short w-[90%] max-w-md">
+               <Crown className="w-12 h-12 md:w-14 md:h-14 text-yellow-500 mb-2"/>
+               <h2 className="text-2xl md:text-4xl font-black text-white mb-2 md:mb-4 text-center">CAMPEÃO 2026</h2>
+               <img src={getFlagUrl(bracket.final[0].winner.code)} className="w-16 md:w-24 rounded-lg shadow-xl mb-3 md:mb-4" alt="Champion Flag" />
+               <h3 className="text-xl md:text-2xl font-bold text-yellow-500 uppercase text-center">{bracket.final[0].winner.name}</h3>
+               <button onClick={() => window.location.reload()} className="mt-4 md:mt-6 text-zinc-400 underline text-sm hover:text-white">Simular Novamente</button>
             </div>
           )}
 
-          {/* AJUSTE AQUI: reficionado, e flex removido para permitir o scroll natural */}
+          {/* Container Externo com o Scroll (Sem o ID de captura) */}
           <div 
-            id="bracket-capture" 
             ref={scrollContainerRef}
-            className="w-full overflow-x-auto custom-scrollbar py-8 bg-zinc-950"
+            className="w-full overflow-x-auto custom-scrollbar py-4 md:py-8 bg-zinc-950"
           >
-            {/* w-fit e mx-auto garantem centro no PC e borda liberada no celular */}
-            <div className="w-fit mx-auto flex items-center px-4 md:px-8 gap-2">
+            {/* O ID de captura fica aqui! Ele pega a largura real de ponta a ponta sem cortar */}
+            <div 
+              id="bracket-capture" 
+              className="w-fit mx-auto flex items-center px-4 md:px-8 gap-2 bg-zinc-950 py-4 md:py-8"
+            >
               
               <div className="flex gap-2">
                  {!isCapturing && (
